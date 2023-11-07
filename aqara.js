@@ -25,7 +25,7 @@ class Aqara {
       this.deviceList = res.devices;
     }
 
-    res = await this.#getDeviceTemps();
+    let res = await this.#getDeviceTemps();
     if (!res.success) {
       await this.logger.aqaraError("Aqara.getDeviceTemps()", res.error);
       return { success: false };
