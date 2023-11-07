@@ -12,11 +12,11 @@ class Aqara {
 
     this.logger = logger;
 
-    this.deviceList = {};
+    this.deviceList = null;
   }
 
   async checkSensors() {
-    if (this.deviceList == {}) {
+    if (this.deviceList === null) {
       let res = await this.#getDeviceList();
       if (!res.success) {
         await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
