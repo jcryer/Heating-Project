@@ -16,15 +16,18 @@ class Aqara {
   }
 
   async checkSensors() {
-    let res = await this.#getDeviceList();
-    if (!res.success) {
-      await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
-      return { success: false };
+    if (this.deviceList == {}) {
+      let res = await this.#getDeviceList();
+      if (!res.success) {
+        await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
+        return { success: false };
+      }
+      this.deviceList = res.devices;
     }
-    this.deviceList = res.devices;   
+
     res = await this.#getDeviceTemps();
     if (!res.success) {
-      await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
+      await this.logger.aqaraError("Aqara.getDeviceTemps()", res.error);
       return { success: false };
     }
     return res;

@@ -17,27 +17,17 @@ async function doCheck(aqara, nest) {
     }
   }
 }
+
 async function main() {
   const creds = JSON.parse(fs.readFileSync('credentials.json'));
   const logger = new Logger(creds.discord);
   const nest = new Nest(creds.nest, logger);
   const aqara = new Aqara(creds.aqara, logger);
 
+  logger.info("System started.");
   console.log("Loaded");
   await doCheck(aqara, nest);
   setInterval(async function() { await doCheck(aqara, nest); }, 1000 * 60 * 5);
 }
 
 main();
-
-// setHeating(creds, false).then((r) => r ? console.log("Success!") : console.log("Fail."));
-
-// checkAccessToken(creds.accessToken).then((r) => r ? console.log("Valid") : console.log("Invalid"));
-// getNewAccessToken(creds.clientId, creds.clientSecret, creds.refreshToken).then((t) => {
-//   console.log(t)
-// });
-
-
-/*
-https://smartdevicemanagement.googleapis.com/v1/enterprises/79dbd138-d5ae-4e1e-bb64-195662ca3867/devices/AVPHwEvHX6Hxd3zh_4y6d-EWR1c1Xta4lH9Zo8umD2xPnA2AJB_ffTpD5XGQbGNImLBrc4C3YbjkXO4eNjIjtuAH-PAvit0:executeCommand
-*/

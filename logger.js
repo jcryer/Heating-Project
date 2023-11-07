@@ -25,6 +25,13 @@ class Logger {
     }
   }
 
+  async info(message) {
+    try {
+      await axios.post(this.webhook, { content: `<@126070623855312896>: ${message}` });
+    } catch (err) {
+    }
+  }
+
   getFormattedTime() {
     var today = new Date();
     var y = today.getFullYear();
