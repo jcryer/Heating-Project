@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 
 class Nest {
-  constructor(nestCreds, logger) {
+  constructor(nestCreds, logger, fileHandler) {
     this.clientId = nestCreds.clientId;
     this.clientSecret = nestCreds.clientSecret;
     this.projectId = nestCreds.projectId;
@@ -10,6 +10,7 @@ class Nest {
     this.refreshToken = nestCreds.refreshToken;
 
     this.logger = logger;
+    this.fileHandler = fileHandler;
   }
   
   async setHeating(mode) {
@@ -36,6 +37,8 @@ class Nest {
     const res = await this.#postRefreshAccessToken();
     if (res.success) {
       this.accessToken = res.accessToken;
+      this.fileHandler.updateNestCredentials(this.accessToken);
+
       return;
     }
     await this.logger.nestError("Nest.updateAccessToken()", res.error);

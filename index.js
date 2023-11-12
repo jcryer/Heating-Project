@@ -1,5 +1,5 @@
 const axios = require('axios').default;
-const fs = require('fs');
+const FileHandler = require('./fileHandler.js');
 const Nest = require('./nest.js')
 const Logger = require('./logger.js');
 const Aqara = require('./aqara.js');
@@ -19,10 +19,11 @@ async function doCheck(aqara, nest) {
 }
 
 async function main() {
-  const creds = JSON.parse(fs.readFileSync('credentials.json'));
+  const fileHandler = new FileHandler();
+  const creds = fileHandler.credentials;
   const logger = new Logger(creds.discord);
-  const nest = new Nest(creds.nest, logger);
-  const aqara = new Aqara(creds.aqara, logger);
+  const nest = new Nest(creds.nest, logger, fileHandler);
+  const aqara = new Aqara(creds.aqara, logger, fileHandler);
 
   logger.info("System started.");
   console.log("Loaded");

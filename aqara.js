@@ -3,14 +3,16 @@ const md5 = require('md5');
 const axios = require('axios').default;
 
 class Aqara {
-  constructor(aqaraCreds, logger, ) {
+  constructor(aqaraCreds, logger, fileHandler) {
     this.appId = aqaraCreds.appId;
     this.accessToken = aqaraCreds.accessToken;
+    this.refreshToken = aqaraCreds.refreshToken;
     this.keyId = aqaraCreds.keyId;
     this.appKey = aqaraCreds.appKey;
     this.gatewayId = aqaraCreds.gatewayId;
 
     this.logger = logger;
+    this.fileHandler = fileHandler;
 
     this.deviceList = null;
   }
@@ -19,6 +21,12 @@ class Aqara {
     if (this.deviceList === null) {
       let res = await this.#getDeviceList();
       if (!res.success) {
+        if (res.error.code === 108) {
+          await this.#updateAccessToken();
+          await this.logger.info("Aqara access key refreshed");
+          await new Promise(r => setTimeout(r, 30000));
+          return await this.checkSensors();
+        }
         await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
         return { success: false };
       }
@@ -38,6 +46,34 @@ class Aqara {
     let sign = `Accesstoken=${this.accessToken}&Appid=${this.appId}&Keyid=${this.keyId}&Nonce=${time}&Time=${time}${this.appKey}`
     sign = md5(sign.toLowerCase());
     return { headers: { Appid: this.appId, Accesstoken: this.accessToken, Keyid: this.keyId, Time: time, Nonce: time, Sign: sign } };
+  }
+
+  async #updateAccessToken() {
+    const res = await this.#postRefreshAccessToken();
+    if (res.success) {
+      this.accessToken = res.accessToken;
+      this.refreshToken = res.refreshToken;
+      this.fileHandler.updateAqaraCredentials(this.accessToken, this.refreshToken);
+      return;
+    }
+    await this.logger.nestError("Aqara.updateAccessToken()", res.error);
+  }
+
+  async #postRefreshAccessToken() {
+    try {
+      const body = {
+        intent: "config.auth.refreshToken",
+        data: { refreshToken: this.refreshToken }
+      };
+      const response = await axios.post('https://open-ger.aqara.com/v3.0/open/api', body, this.#buildHeaders());
+      if (response.data.code === 0) {
+        return { success: true, accessToken: response.data.result.accessToken, refreshToken: response.data.result.refreshToken };
+      }
+      return { success: false, error: response.data };
+    }
+    catch (error) {
+      return { success: false, error: error };
+    }
   }
 
   async #getDeviceTemps() {
