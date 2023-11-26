@@ -35,6 +35,12 @@ class Aqara {
 
     let res = await this.#getDeviceTemps();
     if (!res.success) {
+      if (res.error.code === 108) {
+        await this.#updateAccessToken();
+        await this.logger.info("Aqara access key refreshed");
+        await new Promise(r => setTimeout(r, 30000));
+        return await this.checkSensors();
+      }
       await this.logger.aqaraError("Aqara.getDeviceTemps()", res.error);
       return { success: false };
     }
