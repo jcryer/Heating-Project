@@ -9,7 +9,7 @@ class Aqara {
     this.refreshToken = aqaraCreds.refreshToken;
     this.keyId = aqaraCreds.keyId;
     this.appKey = aqaraCreds.appKey;
-    this.gatewayId = aqaraCreds.gatewayId;
+    this.gatewayIds = aqaraCreds.gatewayIds;
 
     this.logger = logger;
     this.fileHandler = fileHandler;
@@ -19,18 +19,23 @@ class Aqara {
 
   async checkSensors() {
     if (this.deviceList === null) {
-      let res = await this.#getDeviceList();
-      if (!res.success) {
-        if (res.error.code === 108) {
-          await this.#updateAccessToken();
-          await this.logger.info("Aqara access key refreshed");
-          await new Promise(r => setTimeout(r, 30000));
-          return await this.checkSensors();
+      let resp = []
+      for (const id of this.gatewayIds) {
+        let res = await this.#getDeviceList(id);
+        if (!res.success) {
+          if (res.error.code === 108) {
+            await this.#updateAccessToken();
+            await this.logger.info("Aqara access key refreshed");
+            await new Promise(r => setTimeout(r, 30000));
+            return await this.checkSensors();
+          }
+          await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
+          return { success: false };
         }
-        await this.logger.aqaraError("Aqara.getDeviceList()", res.error);
-        return { success: false };
+        resp = resp.concat(res.devices);
       }
-      this.deviceList = res.devices;
+      
+      this.deviceList = resp;
     }
 
     let res = await this.#getDeviceTemps();
@@ -107,11 +112,11 @@ class Aqara {
     }
   }
 
-  async #getDeviceList() {
+  async #getDeviceList(id) {
     try {
       const body = {
         intent: "query.device.subInfo",
-        data: { did: this.gatewayId }
+        data: { did: id }
       };
       const response = await axios.post('https://open-ger.aqara.com/v3.0/open/api', body, this.#buildHeaders());
       if (response.data.code === 0) {
